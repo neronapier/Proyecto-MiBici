@@ -191,7 +191,8 @@ def limpiar_viajes(texto: str) -> tuple[pd.DataFrame, dict]:
 
 
 def limpiar_estaciones(texto: str) -> pd.DataFrame:
-    """Normaliza la nomenclatura y extrae el municipio del prefijo del nombre (p. ej. GDL)."""
+    """Normaliza la nomenclatura, extrae el municipio del código (p. ej. GDL-001) y marca las
+    estaciones retiradas, cuyo nombre empieza con "ex-"."""
     df = pd.read_csv(io.StringIO(texto), dtype=str)
     df = df.rename(columns=mapear_columnas(list(df.columns), COLUMNAS_ESTACIONES))
     df["nombre"] = df["nombre"].str.strip()
@@ -199,7 +200,8 @@ def limpiar_estaciones(texto: str) -> pd.DataFrame:
     df["lat"] = df["lat"].astype("float64")
     df["lon"] = df["lon"].astype("float64")
     df["capacidad"] = pd.to_numeric(df["capacidad"], errors="coerce").astype("Int32")
-    df["municipio"] = df["nombre"].str.extract(r"^\(([A-Z]+)-")[0].fillna("OTRO")
+    df["municipio"] = df["nombre"].str.extract(r"([A-Z]{3})-\d+")[0].fillna("OTRO")
+    df["retirada"] = df["nombre"].str.lower().str.startswith("ex-")
     return df.sort_values("estacion_id").reset_index(drop=True)
 
 
@@ -209,14 +211,21 @@ def guardar_parquet(df: pd.DataFrame, path: Path) -> None:
 
 
 def calcular_version(manifiesto: dict) -> str:
-    """Hash de los archivos crudos, sus filas y la versión de la limpieza (sin fechas)."""
+    """Hash del contenido crudo y limpio de cada archivo y de la versión de la limpieza.
+
+    No incluye fechas de ejecución: la misma fuente con el mismo código da la misma versión.
+    """
     base = {
         "ingesta_version": manifiesto["ingesta_version"],
         "rango": manifiesto["rango"],
         "archivos": [
-            (a["archivo"], a["raw_sha256"], a["filas_limpias"]) for a in manifiesto["archivos"]
+            (a["archivo"], a["raw_sha256"], a["parquet_sha256"], a["filas_limpias"])
+            for a in manifiesto["archivos"]
         ],
-        "estaciones": (manifiesto["estaciones"]["raw_sha256"], manifiesto["estaciones"]["filas"]),
+        "estaciones": (
+            manifiesto["estaciones"]["raw_sha256"],
+            manifiesto["estaciones"]["parquet_sha256"],
+        ),
     }
     digest = hashlib.sha256(json.dumps(base, sort_keys=True).encode()).hexdigest()
     return f"v{INGESTA_VERSION}-{digest[:12]}"
