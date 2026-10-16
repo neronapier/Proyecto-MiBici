@@ -99,6 +99,8 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: requirements.txt
+          # La caché ya la guarda el job de ingesta; guardarla otra vez choca con la misma llave
+          save-cache: false
 
       - name: Crear entorno e instalar dependencias fijas
         run: |
