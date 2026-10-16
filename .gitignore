@@ -1,5 +1,28 @@
-# Data
-/data/
+# Datos de MiBici: nada de data/ entra a Git salvo el manifiesto de versión
+/data/*
+!/data/manifest.json
+
+# MLflow (base de datos de tracking y artefactos)
+mlruns/
+mlartifacts/
+mlflow.db
+mlflow.db-journal
+
+# Modelos serializados
+/models/*
+!/models/.gitkeep
+*.pkl
+*.joblib
+*.onnx
+
+# Credenciales y variables de entorno
+.env
+.env.*
+*.pem
+*.key
+
+# Descargas parciales
+*.part
 
 # Mac OS-specific storage files
 .DS_Store
