@@ -110,8 +110,10 @@ La ingesta, sin pasos manuales:
 1. Lee el portal y obtiene los enlaces de cada mes (las rutas incluyen identificadores que no se pueden
    deducir). El portal rechaza peticiones sin cabeceras de navegador, por eso se envían en `config.py`.
 2. Descarga los CSV a `data/raw/` (si ya existen no los vuelve a descargar).
-3. Normaliza: codificación (los archivos alternan entre UTF-8 y Latin-1), encabezados con o sin comillas y con
-   la "ñ" mal codificada (`Año`, `AÃ±o`, `A}äe`), y fechas (ISO y `DD/MM/AAAA H:MM`, formato de meses anteriores como octubre de 2024).
+3. Normaliza codificación (en el rango elegido hay meses en UTF-8 y en Latin-1), nombres de columnas y fechas.
+   También tolera variantes de años anteriores del portal: encabezados sin comillas, la "ñ" de
+   `Año_de_nacimiento` mal codificada (`A}äe`) y fechas `DD/MM/AAAA H:MM` (octubre de 2024), así que el rango
+   puede ampliarse cambiando solo `config.py`.
 4. Elimina datos personales, nulos, duplicados (758 en septiembre de 2026), duraciones no positivas o
    mayores a 6 h y devoluciones en la misma estación en menos de 60 s.
 5. Guarda un Parquet por mes en `data/processed/viajes/` y la nomenclatura en `data/processed/estaciones.parquet`.
