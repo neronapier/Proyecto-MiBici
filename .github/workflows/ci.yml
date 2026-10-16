@@ -17,13 +17,13 @@ concurrency:
 jobs:
   calidad:
     name: Lint y pruebas
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Instalar uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           cache-dependency-glob: requirements.txt
@@ -53,7 +53,7 @@ jobs:
   convenciones:
     name: Convenciones de rama y Pull Request
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Nombre de rama <tipo>/<descripcion> y título en Conventional Commits
         env:
