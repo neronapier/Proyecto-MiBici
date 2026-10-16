@@ -29,7 +29,7 @@
 \node[box=c3, left=1.1cm of mlflow] (store) {\textbf{Backend MLflow}\\[1pt]\footnotesize \texttt{mlflow.db} (SQLite)\\ \texttt{mlartifacts/}};
 % Fila 3: versionado y uso
 \node[box=c4, below=1.9cm of feat] (manif) {\textbf{Versionado de datos}\\[1pt]\footnotesize \texttt{data/manifest.json}\\ filas + SHA-256};
-\node[box=c4, left=1.1cm of manif] (git) {\textbf{Git / GitHub}\\[1pt]\footnotesize GitHub Flow, PR revisados, Conventional Commits};
+\node[box=c4, left=1.1cm of manif] (git) {\textbf{Git / GitHub}\\[1pt]\footnotesize GitHub Flow, PR revisados; GitHub Actions: CI y pipeline};
 \node[box=c4, left=1.1cm of git] (env) {\textbf{Entorno reproducible}\\[1pt]\footnotesize ccds, uv, Python 3.12, \texttt{requirements.txt} fijo};
 \node[box=c3, left=1.1cm of env, dashed] (users) {\textbf{Usuarios}\\[1pt]\footnotesize operador (P1), rebalanceo (P2), planeación (P3)};
 
