@@ -62,10 +62,30 @@ create_environment:
 #################################################################################
 
 
-## Make dataset
+## Descargar, limpiar y versionar los datos de MiBici
 .PHONY: data
-data: requirements
-	$(PYTHON_INTERPRETER) mibici/dataset.py
+data:
+	$(PYTHON_INTERPRETER) -m mibici.dataset ingesta
+
+## Verificar los datos locales contra data/manifest.json
+.PHONY: verify
+verify:
+	$(PYTHON_INTERPRETER) -m mibici.dataset verificar
+
+## Ejecutar el experimento base (P1, P2 y P3) y registrarlo en MLflow
+.PHONY: train
+train:
+	$(PYTHON_INTERPRETER) -m mibici.modeling.train todos
+
+## Abrir la interfaz de MLflow en http://127.0.0.1:5000
+.PHONY: mlflow-ui
+mlflow-ui:
+	mlflow ui --backend-store-uri sqlite:///mlflow.db --host 127.0.0.1 --port 5000
+
+## Ejecutar el notebook de exploración
+.PHONY: eda
+eda:
+	jupyter nbconvert --to notebook --execute --inplace notebooks/1.0-jpbc-exploracion-mibici.ipynb
 
 
 #################################################################################

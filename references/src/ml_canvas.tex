@@ -1,0 +1,97 @@
+\documentclass[10pt]{article}
+\usepackage[paperwidth=297mm,paperheight=168mm,margin=8mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage[most]{tcolorbox}
+\usepackage{enumitem}
+\setlist{nosep,leftmargin=9pt,label=\textbullet}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\definecolor{tit}{HTML}{1F4E79}
+\newtcolorbox{celda}[2][]{enhanced,colback=white,colframe=tit!70,boxrule=0.7pt,arc=2pt,
+  left=3pt,right=3pt,top=2pt,bottom=2pt,fonttitle=\bfseries,coltitle=white,
+  colbacktitle=tit!85,title={#2},fontupper=\small\raggedright,equal height group=#1}
+\begin{document}
+{\Large\bfseries\color{tit} ML Canvas: MiBici, demanda, riesgo y patrones de estaciones}\hfill
+{\small Equipo NN, TC5061 \quad Diseñado con base en Dorard (2018)}\par\vspace{3pt}
+\begin{tcbraster}[raster columns=5,raster equal height=rows,raster column skip=3pt,raster row skip=3pt]
+\begin{celda}[a]{Decisiones}
+\begin{itemize}
+\item P1: cuántas bicicletas asignar por estación y zona y cuándo programar turnos.
+\item P2: qué estaciones visita primero el equipo de rebalanceo en cada bloque y si debe llevar o retirar bicicletas.
+\item P3: qué tipo de estación conviene abrir en cada zona y dónde ajustar capacidad.
+\end{itemize}
+\end{celda}
+\begin{celda}[a]{Tarea de ML}
+\begin{itemize}
+\item P1, regresión: salidas por estación y hora del día siguiente (horizonte de 1 a 24 h, información hasta el cierre del día anterior).
+\item P2, clasificación binaria: riesgo de vaciado o llenado por estación y bloque de 3 h del día siguiente.
+\item P3, clustering: grupos de estaciones según su patrón horario de uso.
+\end{itemize}
+\end{celda}
+\begin{celda}[a]{Propuesta de valor}
+\begin{itemize}
+\item Usuarios: operador del sistema (P1), equipo de rebalanceo (P2) y planeación urbana (P3).
+\item Menos estaciones vacías o llenas y rutas de rebalanceo más cortas.
+\item Planeación de flota con anticipación de un día.
+\item Expansión basada en evidencia de uso, no solo en ubicación.
+\end{itemize}
+\end{celda}
+\begin{celda}[a]{Recolección de datos}
+\begin{itemize}
+\item MiBici publica un CSV por mes; la ingesta (\texttt{dataset.py}) lo descarga, normaliza y versiona sin pasos manuales.
+\item Las etiquetas salen de los propios viajes (conteos y flujo neto); no requieren anotación.
+\item Al publicarse un mes nuevo se agrega a los datos y cambia la versión del manifiesto.
+\end{itemize}
+\end{celda}
+\begin{celda}[a]{Fuentes de datos}
+\begin{itemize}
+\item Viajes mensuales \texttt{datos\_abiertos\_AAAA\_MM.csv}, 2024-10 a 2026-09: 9.04 M registros, 8.79 M limpios.
+\item Nomenclatura \texttt{nomenclatura\_2026\_09.csv}: 484 estaciones con capacidad y coordenadas.
+\item Calendario de festivos de México (paquete \texttt{holidays}).
+\end{itemize}
+\end{celda}
+\begin{celda}[b]{Simulación de impacto}
+\begin{itemize}
+\item Evaluación fuera de línea con partición temporal: entrenamiento 2024-10 a 2026-03, validación 2026-04 a 06, prueba 2026-07 a 09.
+\item P1: MAE, RMSE y WAPE (estación y municipio). P2: PR-AUC, precisión, exhaustividad y F1. P3: silueta, Davies-Bouldin y ARI de estabilidad.
+\item Criterio: superar al baseline en prueba.
+\end{itemize}
+\end{celda}
+\begin{celda}[b]{Hacer predicciones}
+\begin{itemize}
+\item P1 y P2: proceso por lotes cada noche, con los viajes hasta las 23:59, para todo el día siguiente.
+\item P3: se recalcula cada trimestre o cuando abren estaciones.
+\item Cómputo en CPU: minutos por corrida.
+\end{itemize}
+\end{celda}
+\begin{celda}[b]{Aproximación del riesgo (P2)}
+\begin{itemize}
+\item No hay inventario por estación. Se supone que el rebalanceo deja cada estación a media capacidad.
+\item Riesgo = 1 si en el bloque $|\text{llegadas} - \text{salidas}| \ge 0.5 \times \text{capacidad}$: la estación se vaciaría o llenaría.
+\item Tasa de positivos: 2.9\%.
+\end{itemize}
+\end{celda}
+\begin{celda}[b]{Construcción de modelos}
+\begin{itemize}
+\item Baselines: ingenuo estacional de 7 días (P1), frecuencia de riesgo en 4 semanas (P2) y k-means con k = 4 sobre el perfil de salidas (P3).
+\item Candidatos: HistGradientBoosting Poisson (P1) y clasificador (P2); PCA + k-means con k elegido por silueta (P3).
+\item Reentrenamiento mensual; cada run queda en MLflow.
+\end{itemize}
+\end{celda}
+\begin{celda}[b]{Variables (features)}
+\begin{itemize}
+\item Calendario: hora, día de la semana, mes, fin de semana, festivo.
+\item Estación: capacidad, latitud, longitud, municipio.
+\item Rezagos de 24, 48, 168 y 336 h; promedio de la misma hora en 4 semanas; nivel del día anterior.
+\item P2: flujo neto y riesgo rezagados; tasa histórica.
+\item P3: proporción horaria de salidas y llegadas, peso del fin de semana, volumen y balance.
+\end{itemize}
+\end{celda}
+\end{tcbraster}
+\vspace{3pt}
+\begin{celda}[c]{Monitoreo}
+Cada mes publicado se compara el pronóstico con los viajes reales (WAPE de P1 y PR-AUC de P2 frente a la línea base registrada en MLflow). La ingesta alerta si cambian el esquema, la codificación o el hash de un archivo ya publicado. Se vigilan la apertura o el retiro de estaciones y los cambios de capacidad, que alteran las etiquetas de P2 y los grupos de P3.
+\end{celda}
+\end{document}
