@@ -214,3 +214,6 @@ cython_debug/
 .pypirc
 # Figuras que regenera cada run del experimento (se guardan como artefactos en MLflow)
 /reports/figures/p[123]-*/
+
+# Salidas de compilación de LaTeX
+/references/src/*.pdf
