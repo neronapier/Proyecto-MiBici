@@ -290,4 +290,5 @@ def perfil_estaciones(conteos: pd.DataFrame, inicio: str, fin: str) -> pd.DataFr
 
 
 def columnas_perfil_horario(perfil: pd.DataFrame, prefijo: str = "sal_lab") -> list[str]:
+    """Columnas del perfil horario con el prefijo dado (P3); el baseline agrupa solo con `sal_lab`."""
     return [c for c in perfil.columns if c.startswith(prefijo)]

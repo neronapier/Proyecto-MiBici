@@ -77,6 +77,8 @@ class Modelo(str, Enum):
 
 
 def git_info() -> dict[str, str]:
+    """Commit, rama y si hay cambios sin commit; se registran como etiquetas del run."""
+
     def git(*args):
         return subprocess.run(
             ["git", *args], cwd=PROJ_ROOT, capture_output=True, text=True, check=True
@@ -109,6 +111,7 @@ def preparar_mlflow() -> None:
 
 
 def params_comunes() -> dict:
+    """Parámetros que permiten reproducir cualquier run: rango, partición, versión de datos y semilla."""
     return {
         "mes_inicio": MES_INICIO,
         "mes_fin": MES_FIN,
@@ -121,6 +124,7 @@ def params_comunes() -> dict:
 
 
 def tags_comunes(pregunta: str, tipo: str, descripcion: str) -> dict:
+    """Etiquetas de equipo, pregunta, tipo de modelo y commit de Git."""
     return {
         "equipo": EQUIPO,
         "pregunta": pregunta,
@@ -138,6 +142,7 @@ def particion(t: pd.Series) -> pd.Series:
 
 
 def cargar_conteos() -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Viajes limpios agregados por estación y hora, base de las tres preguntas."""
     estaciones = cargar_estaciones()
     viajes = cargar_viajes(["inicio", "fin", "origen_id", "destino_id"])
     return F.conteos_por_hora(viajes, estaciones), estaciones
@@ -148,6 +153,7 @@ def figuras_dir(run_name: str) -> Path:
 
 
 def registrar_artefactos(paths: list[Path], carpeta: str = "figuras") -> None:
+    """Registra las figuras y el manifiesto de datos como artefactos del run activo."""
     for p in paths:
         mlflow.log_artifact(str(p), artifact_path=carpeta)
     mlflow.log_artifact(str(MANIFEST_PATH), artifact_path="datos")
@@ -162,6 +168,7 @@ TIPOS_CONFIABLES = [
 
 
 def registrar_modelo(modelo, ejemplo: pd.DataFrame) -> None:
+    """Registra el modelo entrenado en MLflow (no se guarda en Git)."""
     mlflow.sklearn.log_model(
         modelo, name="modelo", input_example=ejemplo, skops_trusted_types=TIPOS_CONFIABLES
     )
@@ -188,6 +195,7 @@ P1_FEATURES = [
 
 
 def metricas_regresion(y, pred, prefijo: str) -> dict:
+    """MAE, RMSE, WAPE y R2 con el conjunto como prefijo (val_ o test_)."""
     return {
         f"{prefijo}_mae": mean_absolute_error(y, pred),
         f"{prefijo}_rmse": root_mean_squared_error(y, pred),
@@ -203,6 +211,7 @@ def wape_municipio(df: pd.DataFrame) -> float:
 
 
 def correr_p1(conteos, estaciones, modelo: Modelo) -> None:
+    """P1: baseline ingenuo estacional y gradient boosting Poisson para salidas por estación y hora."""
     df = F.tabla_p1(conteos, estaciones)
     # Las dos primeras semanas de cada estación no tienen todos los rezagos
     df = df.dropna(subset=[f"salidas_lag{max(P1_LAGS_HORAS)}"]).reset_index(drop=True)
@@ -337,6 +346,7 @@ def umbral_f1(y, score) -> float:
 
 
 def metricas_clasificacion(y, score, umbral: float, prefijo: str) -> dict:
+    """PR-AUC, ROC-AUC, F1, precisión, exhaustividad y Brier con el umbral de validación."""
     pred = (score >= umbral).astype(int)
     return {
         f"{prefijo}_pr_auc": average_precision_score(y, score),
@@ -350,6 +360,7 @@ def metricas_clasificacion(y, score, umbral: float, prefijo: str) -> dict:
 
 
 def correr_p2(conteos, estaciones, modelo: Modelo) -> None:
+    """P2: baseline de frecuencia histórica y gradient boosting para el riesgo por bloque de 3 h."""
     df = F.tabla_p2(conteos, estaciones)
     # La primera semana de cada estación no tiene el rezago semanal
     df = df.dropna(subset=["riesgo_lag56"]).reset_index(drop=True)
@@ -466,6 +477,7 @@ def correr_p2(conteos, estaciones, modelo: Modelo) -> None:
 
 
 def metricas_clustering(X, labels, prefijo: str) -> dict:
+    """Silueta, Davies-Bouldin y Calinski-Harabasz con el conjunto como prefijo."""
     return {
         f"{prefijo}_silhouette": silhouette_score(X, labels, random_state=SEED),
         f"{prefijo}_davies_bouldin": davies_bouldin_score(X, labels),
@@ -474,6 +486,7 @@ def metricas_clustering(X, labels, prefijo: str) -> dict:
 
 
 def correr_p3(conteos, estaciones, modelo: Modelo) -> None:
+    """P3: k-means baseline sobre el perfil de salidas y PCA + k-means con k elegido por silueta."""
     inicio_test = pd.Timestamp(VAL_FIN) + pd.Timedelta(seconds=1)
     perfil = F.perfil_estaciones(conteos, MES_INICIO, TRAIN_FIN)
     perfil_test = F.perfil_estaciones(conteos, str(inicio_test), str(conteos["hora"].max()))
