@@ -90,12 +90,19 @@ def git_info() -> dict[str, str]:
 
 
 def preparar_mlflow() -> None:
+    """Crea el experimento si no existe.
+
+    Con un servidor (URI http) los artefactos los gestiona el servidor; con SQLite directo se
+    guardan en `mlartifacts/` del proyecto.
+    """
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
     if mlflow.get_experiment_by_name(EXPERIMENT_NAME) is None:
-        MLARTIFACTS_DIR.mkdir(exist_ok=True)
+        local = not MLFLOW_TRACKING_URI.startswith("http")
+        if local:
+            MLARTIFACTS_DIR.mkdir(exist_ok=True)
         mlflow.create_experiment(
             EXPERIMENT_NAME,
-            artifact_location=MLARTIFACTS_DIR.as_uri(),
+            artifact_location=MLARTIFACTS_DIR.as_uri() if local else None,
             tags={"equipo": EQUIPO, "proyecto": "MiBici TC5061"},
         )
     mlflow.set_experiment(EXPERIMENT_NAME)

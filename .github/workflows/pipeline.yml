@@ -1,0 +1,159 @@
+# Pipeline de datos y experimento base: ingesta reproducible, verificación de la versión de los
+# datos y entrenamiento de P1, P2 y P3 con registro en MLflow. Los datos y los resultados nunca se
+# versionan en Git: viajan como caché y artefactos de GitHub Actions.
+name: Pipeline MiBici
+
+on:
+  workflow_dispatch:
+    inputs:
+      entrenar:
+        description: "Ejecutar también el experimento base (P1, P2 y P3)"
+        type: boolean
+        default: true
+  push:
+    branches: [main]
+    paths:
+      - "mibici/**"
+      - "data/manifest.json"
+      - "requirements.txt"
+      - ".github/workflows/pipeline.yml"
+  schedule:
+    # Lunes 12:00 UTC: confirma que los archivos publicados por MiBici no cambiaron
+    - cron: "0 12 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pipeline-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ingesta:
+    name: Ingesta y verificación de datos
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    outputs:
+      data_version: ${{ steps.version.outputs.data_version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: requirements.txt
+
+      - name: Crear entorno e instalar dependencias fijas
+        run: |
+          make create_environment
+          echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - run: make requirements
+
+      # Los CSV crudos se guardan en caché por versión del manifiesto para no descargarlos en cada corrida
+      - name: Restaurar datos crudos
+        uses: actions/cache@v4
+        with:
+          path: data/raw
+          key: mibici-raw-${{ hashFiles('data/manifest.json') }}
+
+      - name: Ingesta (descarga, normalización, Parquet y manifiesto)
+        run: make data
+
+      - name: Verificar hashes contra el manifiesto
+        run: make verify
+
+      - name: La versión de los datos coincide con la de Git
+        run: |
+          if ! git diff --exit-code -- data/manifest.json; then
+            echo "::error::Los datos publicados cambiaron respecto a data/manifest.json; revisar y versionar la nueva versión"
+            exit 1
+          fi
+
+      - name: Versión de los datos
+        id: version
+        run: |
+          v=$(python -c "import json; print(json.load(open('data/manifest.json'))['version'])")
+          echo "data_version=$v" >> "$GITHUB_OUTPUT"
+          echo "### Datos MiBici: \`$v\`" >> "$GITHUB_STEP_SUMMARY"
+          python -c "import json; t=json.load(open('data/manifest.json'))['totales']; print('\n'.join(f'- {k}: {v:,}' for k, v in t.items()))" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar manifiesto
+        uses: actions/upload-artifact@v4
+        with:
+          name: manifest
+          path: data/manifest.json
+
+  experimento:
+    name: Experimento base en MLflow
+    needs: ingesta
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.entrenar)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: requirements.txt
+
+      - name: Crear entorno e instalar dependencias fijas
+        run: |
+          make create_environment
+          echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - run: make requirements
+
+      - name: Restaurar datos crudos
+        uses: actions/cache/restore@v4
+        with:
+          path: data/raw
+          key: mibici-raw-${{ hashFiles('data/manifest.json') }}
+          fail-on-cache-miss: true
+
+      - name: Reconstruir Parquet y verificar
+        run: |
+          make data
+          make verify
+
+      # Servidor local de MLflow: los artefactos quedan como mlflow-artifacts:/ y la base descargada
+      # se abre en cualquier equipo con `make mlflow-ui` desde la raíz del repositorio
+      - name: Iniciar servidor de MLflow
+        run: |
+          mlflow server --backend-store-uri sqlite:///mlflow.db --artifacts-destination ./mlartifacts \
+            --host 127.0.0.1 --port 5000 > mlflow-server.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://127.0.0.1:5000/health && break; sleep 2; done
+          echo "MLFLOW_TRACKING_URI=http://127.0.0.1:5000" >> "$GITHUB_ENV"
+
+      - name: Entrenar y registrar P1, P2 y P3
+        run: make train
+
+      - name: Resumen de métricas
+        run: |
+          python - >> "$GITHUB_STEP_SUMMARY" <<'EOF'
+          import mlflow
+          from mibici.config import EXPERIMENT_NAME, MLFLOW_TRACKING_URI
+          mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+          runs = mlflow.search_runs(experiment_names=[EXPERIMENT_NAME])
+          cols = ["metrics.test_mae", "metrics.test_pr_auc", "metrics.train_silhouette"]
+          print("### Experimento base\n")
+          print("| Run | Pregunta | Tipo | test_mae | test_pr_auc | train_silhouette |")
+          print("|---|---|---|---|---|---|")
+          for _, r in runs.sort_values("tags.mlflow.runName").iterrows():
+              vals = ["" if r.get(c) != r.get(c) else f"{r[c]:.3f}" for c in cols]
+              print(f"| {r['tags.mlflow.runName']} | {r['tags.pregunta']} | {r['tags.tipo_modelo']} | " + " | ".join(vals) + " |")
+          EOF
+
+      # Base de MLflow, artefactos y figuras; se abren localmente con `make mlflow-ui`
+      - name: Guardar resultados de MLflow
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlflow-${{ needs.ingesta.outputs.data_version }}-${{ github.sha }}
+          path: |
+            mlflow.db
+            mlartifacts/
+            reports/figures/
+          retention-days: 30

@@ -1,0 +1,70 @@
+# Integración continua: calidad de código, pruebas y convenciones del flujo de trabajo.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  calidad:
+    name: Lint y pruebas
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: requirements.txt
+
+      - name: Crear entorno e instalar dependencias fijas
+        run: |
+          make create_environment
+          echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - run: make requirements
+
+      - name: Lint (ruff)
+        run: make lint
+
+      - name: Pruebas (pytest)
+        run: make test
+
+      - name: Sin datos, modelos ni carpetas de MLflow en Git
+        run: |
+          prohibidos=$(git ls-files \
+            | grep -vE '^data/manifest\.json$|\.gitkeep$' \
+            | grep -E '^data/|^models/|^(mlruns|mlartifacts)/|\.(parquet|csv|pkl|joblib|db)$|(^|/)\.env$' || true)
+          if [ -n "$prohibidos" ]; then
+            echo "Archivos que no deben versionarse:"; echo "$prohibidos"; exit 1
+          fi
+
+  convenciones:
+    name: Convenciones de rama y Pull Request
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Nombre de rama <tipo>/<descripcion> y título en Conventional Commits
+        env:
+          RAMA: ${{ github.head_ref }}
+          TITULO: ${{ github.event.pull_request.title }}
+        run: |
+          tipos='feat|fix|docs|chore|refactor|test|ci|perf'
+          if ! [[ "$RAMA" =~ ^($tipos)/[a-z0-9._-]+$ ]]; then
+            echo "Rama '$RAMA' no sigue <tipo>/<descripcion> (tipos: $tipos)"; exit 1
+          fi
+          if ! [[ "$TITULO" =~ ^($tipos)(\([a-z0-9_-]+\))?!?:\ .+ ]]; then
+            echo "Título '$TITULO' no sigue Conventional Commits: <tipo>(<alcance>): <descripcion>"; exit 1
+          fi
+          echo "Rama y título correctos"
