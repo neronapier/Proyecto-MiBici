@@ -335,6 +335,10 @@ def ingesta(
         },
     }
     manifiesto["version"] = calcular_version(manifiesto)
+    # Si el contenido no cambió se conserva la fecha original para no modificar el archivo en Git
+    sin_fecha = {k: v for k, v in manifiesto.items() if k != "generado_utc"}
+    if previo and {k: v for k, v in previo.items() if k != "generado_utc"} == sin_fecha:
+        manifiesto["generado_utc"] = previo["generado_utc"]
     with open(MANIFEST_PATH, "w", encoding="utf-8") as f:
         json.dump(manifiesto, f, indent=2, ensure_ascii=False)
         f.write("\n")
