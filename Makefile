@@ -80,7 +80,7 @@ train:
 ## Abrir la interfaz de MLflow en http://127.0.0.1:5000
 .PHONY: mlflow-ui
 mlflow-ui:
-	mlflow ui --backend-store-uri sqlite:///mlflow.db --host 127.0.0.1 --port 5000
+	mlflow ui --backend-store-uri "$$($(PYTHON_INTERPRETER) -c 'from mibici.config import MLFLOW_TRACKING_URI as u; print(u)' 2>/dev/null)" --host 127.0.0.1 --port 5000
 
 ## Ejecutar el notebook de exploración
 .PHONY: eda

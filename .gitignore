@@ -1,6 +1,7 @@
 # Datos de MiBici: nada de data/ entra a Git salvo el manifiesto de versión
 /data/*
 !/data/manifest.json
+*.parquet
 
 # MLflow (base de datos de tracking y artefactos)
 mlruns/
