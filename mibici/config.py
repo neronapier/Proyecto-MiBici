@@ -45,6 +45,9 @@ MLARTIFACTS_DIR = PROJ_ROOT / "mlartifacts"
 PORTAL_URL = "https://www.mibici.net/es/datos-abiertos/"
 BASE_URL = "https://www.mibici.net"
 NOMENCLATURA_ARCHIVO = "nomenclatura_2026_09.csv"
+# Tiempo máximo por intento de descarga (un mes pesa unos 35 MB) y número de intentos
+DESCARGA_MAX_S = 180
+DESCARGA_INTENTOS = 5
 # El portal rechaza peticiones sin cabeceras de navegador (Mod_Security)
 HTTP_HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0",

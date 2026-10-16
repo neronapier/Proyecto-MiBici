@@ -25,6 +25,8 @@ import typer
 
 from mibici.config import (
     BASE_URL,
+    DESCARGA_INTENTOS,
+    DESCARGA_MAX_S,
     DURACION_MAX_S,
     DURACION_MIN_MISMA_ESTACION_S,
     ESTACIONES_PATH,
@@ -121,18 +123,24 @@ def enlaces_portal(session: requests.Session) -> dict[str, str]:
     return enlaces
 
 
-def descargar(session: requests.Session, url: str, destino: Path, intentos: int = 3) -> None:
-    for intento in range(1, intentos + 1):
+def descargar(session: requests.Session, url: str, destino: Path) -> None:
+    """Descarga con límite de tiempo por intento; si la conexión se estanca, reintenta con otra."""
+    tmp = destino.with_suffix(".part")
+    for intento in range(1, DESCARGA_INTENTOS + 1):
+        inicio = time.monotonic()
         try:
-            with session.get(url, stream=True, timeout=120) as resp:
+            with session.get(url, stream=True, timeout=(15, 60)) as resp:
                 resp.raise_for_status()
-                tmp = destino.with_suffix(".part")
                 with open(tmp, "wb") as f:
-                    f.writelines(resp.iter_content(1 << 20))
-                tmp.rename(destino)
+                    for bloque in resp.iter_content(1 << 20):
+                        f.write(bloque)
+                        if time.monotonic() - inicio > DESCARGA_MAX_S:
+                            raise requests.Timeout(f"más de {DESCARGA_MAX_S} s")
+            tmp.rename(destino)
             return
         except requests.RequestException as err:
             logger.warning(f"Fallo al descargar {url} (intento {intento}): {err}")
+            session.close()  # descarta conexiones lentas; el siguiente intento abre una nueva
             time.sleep(5 * intento)
     raise RuntimeError(f"No se pudo descargar {url}")
 
