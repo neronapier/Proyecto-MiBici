@@ -50,7 +50,9 @@ from mibici.config import (
     MLARTIFACTS_DIR,
     MLFLOW_TRACKING_URI,
     P1_LAGS_HORAS,
+    P1_SEMANAS_PERFIL,
     P2_HORAS_BLOQUE,
+    P2_SEMANAS_PERFIL,
     P2_UMBRAL_CAPACIDAD,
     P3_K_BASELINE,
     P3_K_CANDIDATOS,
@@ -173,7 +175,7 @@ P1_FEATURES = [
     *[f"salidas_lag{k}" for k in P1_LAGS_HORAS],
     "llegadas_lag24",
     "llegadas_lag168",
-    "salidas_media_4sem",
+    f"salidas_media_{P1_SEMANAS_PERFIL}sem",
     "salidas_media24_desf24",
 ]
 
@@ -311,10 +313,13 @@ P2_FEATURES = [
     "llegadas_lag56",
     "riesgo_lag8",
     "riesgo_lag56",
-    "riesgo_media_4sem",
-    "flujo_neto_media_4sem",
+    f"riesgo_media_{P2_SEMANAS_PERFIL}sem",
+    f"flujo_neto_media_{P2_SEMANAS_PERFIL}sem",
     "riesgo_tasa_hist",
 ]
+
+
+P2_RIESGO_MEDIA = f"riesgo_media_{P2_SEMANAS_PERFIL}sem"
 
 
 def umbral_f1(y, score) -> float:
@@ -372,7 +377,7 @@ def correr_p2(conteos, estaciones, modelo: Modelo) -> None:
         return u, metr, figs
 
     if modelo in (Modelo.baseline, Modelo.ambos):
-        run_name = "p2-baseline-frecuencia-4sem"
+        run_name = f"p2-baseline-frecuencia-{P2_SEMANAS_PERFIL}sem"
         with mlflow.start_run(run_name=run_name):
             mlflow.set_tags(
                 tags_comunes(
@@ -383,9 +388,16 @@ def correr_p2(conteos, estaciones, modelo: Modelo) -> None:
                 )
             )
             u, metr, figs = evaluar(
-                sets["val"]["riesgo_media_4sem"], sets["test"]["riesgo_media_4sem"], run_name
+                sets["val"][P2_RIESGO_MEDIA], sets["test"][P2_RIESGO_MEDIA], run_name
             )
-            mlflow.log_params(base | {"modelo": "frecuencia_historica_4sem", "umbral_decision": u})
+            mlflow.log_params(
+                base
+                | {
+                    "modelo": "frecuencia_historica",
+                    "semanas": P2_SEMANAS_PERFIL,
+                    "umbral_decision": u,
+                }
+            )
             mlflow.log_metrics(metr)
             registrar_artefactos(figs)
             logger.info(f"{run_name}: test_pr_auc={metr['test_pr_auc']:.3f}")

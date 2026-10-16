@@ -31,7 +31,7 @@ El ML Canvas está en [`references/ml_canvas.pdf`](references/ml_canvas.pdf) y l
 - Rango: octubre de 2024 a septiembre de 2026 (24 meses). Dos años completos cubren la estacionalidad anual
   y los meses de prueba tienen su equivalente del año anterior en entrenamiento.
 - Tamaño: 9,043,925 registros crudos (776 MB), 8,790,197 viajes limpios, 484 estaciones en la nomenclatura
-  (470 con actividad en el periodo).
+  (470 con actividad en el periodo; 101 de ellas empezaron a operar entre abril y septiembre de 2026).
 - Partición temporal, sin mezclar fechas:
 
 | Conjunto | Periodo |
@@ -71,12 +71,23 @@ El ML Canvas está en [`references/ml_canvas.pdf`](references/ml_canvas.pdf) y l
         └── train.py       <- Experimento base de P1, P2 y P3 con MLflow
 ```
 
+## Cómo se generó la estructura
+
+Primer commit del repositorio, generado con Cookiecutter Data Science 2.3.0:
+
+```bash
+pipx install cookiecutter-data-science
+ccds   # respuestas: module_name=mibici, python_version_number=3.12, environment_manager=uv,
+       # dependency_file=requirements.txt, pydata_packages=none, testing_framework=pytest,
+       # linting_and_formatting=ruff, open_source_license=MIT, docs=none, include_code_scaffold=Yes
+```
+
 ## Instalación
 
 Requiere Python 3.12, [uv](https://docs.astral.sh/uv/) y Git. Desde un clon limpio:
 
 ```bash
-git clone https://github.com/<organizacion>/TC5061-Proyecto-EquipoNN.git
+git clone https://github.com/neronapier/TC5061-Proyecto-EquipoNN.git
 cd TC5061-Proyecto-EquipoNN
 make create_environment          # uv venv --python 3.12
 source .venv/bin/activate

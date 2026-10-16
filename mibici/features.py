@@ -15,6 +15,7 @@ from mibici.config import (
     P1_LAGS_HORAS,
     P1_SEMANAS_PERFIL,
     P2_HORAS_BLOQUE,
+    P2_SEMANAS_PERFIL,
     P2_UMBRAL_CAPACIDAD,
 )
 
@@ -239,8 +240,8 @@ def tabla_p2(conteos: pd.DataFrame, estaciones: pd.DataFrame) -> pd.DataFrame:
     df = variables_estacion(df, estaciones)
     for col in ["flujo_neto", "salidas", "llegadas", "riesgo"]:
         df = variables_rezago(df, col, [por_dia, por_semana])
-    df = perfil_semanal(df, "riesgo", 4, por_semana)
-    df = perfil_semanal(df, "flujo_neto", 4, por_semana)
+    df = perfil_semanal(df, "riesgo", P2_SEMANAS_PERFIL, por_semana)
+    df = perfil_semanal(df, "flujo_neto", P2_SEMANAS_PERFIL, por_semana)
     df = tasa_historica(df, "riesgo", por_dia)
     return df
 

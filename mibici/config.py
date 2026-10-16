@@ -73,6 +73,7 @@ P1_SEMANAS_PERFIL = 4
 # P2: riesgo de vaciado o llenado por bloque de horas
 P2_HORAS_BLOQUE = 3
 P2_UMBRAL_CAPACIDAD = 0.5  # fracción de la capacidad que el flujo neto debe superar
+P2_SEMANAS_PERFIL = 4
 
 # P3: clustering de estaciones
 P3_K_BASELINE = 4
