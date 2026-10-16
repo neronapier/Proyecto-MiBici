@@ -28,15 +28,16 @@ El ML Canvas está en [`references/ml_canvas.pdf`](references/ml_canvas.pdf) y l
 
 - Fuente: [portal de datos abiertos de MiBici](https://www.mibici.net/es/datos-abiertos/), archivos
   `datos_abiertos_AAAA_MM.csv` y `nomenclatura_2026_09.csv`. Los enlaces exactos quedan en `data/manifest.json`.
-- Rango: octubre de 2024 a septiembre de 2026 (24 meses). Dos años completos cubren la estacionalidad anual
-  y los meses de prueba tienen su equivalente del año anterior en entrenamiento.
-- Tamaño: 9,043,925 registros crudos (776 MB), 8,790,197 viajes limpios, 484 estaciones en la nomenclatura
+- Rango: enero de 2025 a septiembre de 2026 (21 meses; septiembre de 2026 es el último mes publicado). Cubre
+  2025 completo y lo publicado de 2026, y los meses de prueba tienen su equivalente del año anterior en
+  entrenamiento.
+- Tamaño: 7,894,097 registros crudos (685 MB), 7,666,077 viajes limpios, 484 estaciones en la nomenclatura
   (470 con actividad en el periodo; 101 de ellas empezaron a operar entre abril y septiembre de 2026).
 - Partición temporal, sin mezclar fechas:
 
 | Conjunto | Periodo |
 |----------|---------|
-| Entrenamiento | 2024-10 a 2026-03 |
+| Entrenamiento | 2025-01 a 2026-03 |
 | Validación | 2026-04 a 2026-06 |
 | Prueba | 2026-07 a 2026-09 |
 
@@ -110,14 +111,14 @@ La ingesta, sin pasos manuales:
    deducir). El portal rechaza peticiones sin cabeceras de navegador, por eso se envían en `config.py`.
 2. Descarga los CSV a `data/raw/` (si ya existen no los vuelve a descargar).
 3. Normaliza: codificación (los archivos alternan entre UTF-8 y Latin-1), encabezados con o sin comillas y con
-   la "ñ" mal codificada (`Año`, `AÃ±o`, `A}äe`), y fechas (octubre de 2024 usa `DD/MM/AAAA H:MM`).
+   la "ñ" mal codificada (`Año`, `AÃ±o`, `A}äe`), y fechas (ISO y `DD/MM/AAAA H:MM`, formato de meses anteriores como octubre de 2024).
 4. Elimina datos personales, nulos, duplicados (758 en septiembre de 2026), duraciones no positivas o
    mayores a 6 h y devoluciones en la misma estación en menos de 60 s.
 5. Guarda un Parquet por mes en `data/processed/viajes/` y la nomenclatura en `data/processed/estaciones.parquet`.
 6. Escribe `data/manifest.json` con URL, bytes, codificación, filas crudas y limpias, descartes por motivo y
    SHA-256 del CSV y del Parquet de cada archivo.
 
-La versión de los datos (`data_version`, por ejemplo `v1-eba995468a4f`) es un hash del contenido crudo y limpio
+La versión de los datos (`data_version`, por ejemplo `v1-fc921063bb48`) es un hash del contenido crudo y limpio
 y de la versión de la lógica de limpieza; no incluye fechas de ejecución. Correr la ingesta dos veces da la
 misma versión. Si MiBici modifica un archivo ya publicado, la ingesta lo advierte y la versión cambia.
 `make verify` comprueba los hashes locales contra el manifiesto. Cada run registra la versión en MLflow.

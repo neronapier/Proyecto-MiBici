@@ -47,14 +47,14 @@
 \end{celda}
 \begin{celda}[a]{Fuentes de datos}
 \begin{itemize}
-\item Viajes mensuales \texttt{datos\_abiertos\_AAAA\_MM.csv}, 2024-10 a 2026-09: 9.04 M registros, 8.79 M limpios.
+\item Viajes mensuales \texttt{datos\_abiertos\_AAAA\_MM.csv}, 2025-01 a 2026-09: 7.89 M registros, 7.67 M limpios.
 \item Nomenclatura \texttt{nomenclatura\_2026\_09.csv}: 484 estaciones con capacidad y coordenadas.
 \item Calendario de festivos de México (paquete \texttt{holidays}).
 \end{itemize}
 \end{celda}
 \begin{celda}[b]{Simulación de impacto}
 \begin{itemize}
-\item Evaluación fuera de línea con partición temporal: entrenamiento 2024-10 a 2026-03, validación 2026-04 a 06, prueba 2026-07 a 09.
+\item Evaluación fuera de línea con partición temporal: entrenamiento 2025-01 a 2026-03, validación 2026-04 a 06, prueba 2026-07 a 09.
 \item P1: MAE, RMSE y WAPE (estación y municipio). P2: PR-AUC, precisión, exhaustividad y F1. P3: silueta, Davies-Bouldin y ARI de estabilidad.
 \item Criterio: superar al baseline en prueba.
 \end{itemize}
@@ -70,7 +70,7 @@
 \begin{itemize}
 \item No hay inventario por estación. Se supone que el rebalanceo deja cada estación a media capacidad.
 \item Riesgo = 1 si en el bloque $|\text{llegadas} - \text{salidas}| \ge 0.5 \times \text{capacidad}$: la estación se vaciaría o llenaría.
-\item Tasa de positivos: 2.9\%.
+\item Tasa de positivos: 2.8\%.
 \end{itemize}
 \end{celda}
 \begin{celda}[b]{Construcción de modelos}

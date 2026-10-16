@@ -53,9 +53,9 @@ HTTP_HEADERS = {
 }
 
 # Rango de fechas (meses completos, inclusivo) y partición temporal
-MES_INICIO = "2024-10"
+MES_INICIO = "2025-01"
 MES_FIN = "2026-09"
-TRAIN_FIN = "2026-03-31 23:59:59"  # train: 2024-10 a 2026-03 (18 meses)
+TRAIN_FIN = "2026-03-31 23:59:59"  # train: 2025-01 a 2026-03 (15 meses)
 VAL_FIN = "2026-06-30 23:59:59"  # validación: 2026-04 a 2026-06 (3 meses)
 # test: 2026-07 a 2026-09 (3 meses)
 
