@@ -77,6 +77,7 @@ P2_UMBRAL_CAPACIDAD = 0.5  # fracción de la capacidad que el flujo neto debe su
 # P3: clustering de estaciones
 P3_K_BASELINE = 4
 P3_K_CANDIDATOS = [3, 4, 5, 6, 7, 8]
+P3_PCA_COMPONENTES = 3
 
 # Si tqdm está instalado, loguru escribe a través de tqdm.write
 # https://github.com/Delgan/loguru/issues/135
