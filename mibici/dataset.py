@@ -66,6 +66,7 @@ COLUMNAS_ESTACIONES = {
 
 
 def sha256_archivo(path: Path) -> str:
+    """SHA-256 del archivo leído por bloques; base del versionado de datos."""
     h = hashlib.sha256()
     with open(path, "rb") as f:
         for bloque in iter(lambda: f.read(1 << 20), b""):
@@ -214,6 +215,7 @@ def limpiar_estaciones(texto: str) -> pd.DataFrame:
 
 
 def guardar_parquet(df: pd.DataFrame, path: Path) -> None:
+    """Guarda en Parquet con compresión zstd, formato columnar eficiente para millones de filas."""
     path.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(path, engine="pyarrow", compression="zstd", index=False)
 
@@ -240,6 +242,7 @@ def calcular_version(manifiesto: dict) -> str:
 
 
 def cargar_manifiesto(path: Path = MANIFEST_PATH) -> dict:
+    """Lee el manifiesto versionado en Git (`data/manifest.json`)."""
     with open(path, encoding="utf-8") as f:
         return json.load(f)
 
@@ -259,10 +262,12 @@ def cargar_viajes(columnas: list[str] | None = None) -> pd.DataFrame:
 
 
 def cargar_estaciones() -> pd.DataFrame:
+    """Lee la nomenclatura limpia de estaciones."""
     return pd.read_parquet(ESTACIONES_PATH)
 
 
 def ruta_relativa(path: Path) -> str:
+    """Ruta relativa a la raíz del proyecto, para que el manifiesto no dependa de la máquina."""
     return path.relative_to(PROJ_ROOT).as_posix()
 
 

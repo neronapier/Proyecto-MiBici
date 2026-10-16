@@ -50,6 +50,7 @@ def error_por_hora(df: pd.DataFrame, path: Path) -> Path:
 
 
 def importancia(imp: pd.Series, titulo: str, path: Path) -> Path:
+    """Importancia por permutación de cada variable."""
     imp = imp.sort_values()
     fig, ax = plt.subplots(figsize=(7, 0.32 * len(imp) + 1))
     ax.barh(imp.index, imp.values, color=COLORES[0])
@@ -59,6 +60,7 @@ def importancia(imp: pd.Series, titulo: str, path: Path) -> Path:
 
 
 def curva_pr(y, score, titulo: str, path: Path) -> Path:
+    """Curva precisión-exhaustividad con la tasa de positivos como referencia."""
     fig, ax = plt.subplots(figsize=(5.5, 4.5))
     PrecisionRecallDisplay.from_predictions(y, score, ax=ax, name="Modelo")
     ax.axhline(np.mean(y), ls="--", color="gray", label="Tasa de positivos")
@@ -68,6 +70,7 @@ def curva_pr(y, score, titulo: str, path: Path) -> Path:
 
 
 def matriz_confusion(y, pred, titulo: str, path: Path) -> Path:
+    """Matriz de confusión con el umbral elegido en validación."""
     fig, ax = plt.subplots(figsize=(4.5, 4))
     ConfusionMatrixDisplay.from_predictions(
         y, pred, ax=ax, display_labels=["Sin riesgo", "Riesgo"], colorbar=False, cmap="Blues"
@@ -91,6 +94,7 @@ def riesgo_por_bloque(df: pd.DataFrame, path: Path) -> Path:
 
 
 def mapa_clusters(est: pd.DataFrame, titulo: str, path: Path) -> Path:
+    """Estaciones en el mapa coloreadas por grupo."""
     fig, ax = plt.subplots(figsize=(7, 7))
     for c, d in est.groupby("cluster"):
         ax.scatter(d["lon"], d["lat"], s=14, color=COLORES[c % 10], label=f"Grupo {c} ({len(d)})")
@@ -139,6 +143,7 @@ def perfiles_clusters(perfil: pd.DataFrame, path: Path) -> Path:
 
 
 def silueta_por_k(ks: list[int], valores: list[float], path: Path) -> Path:
+    """Silueta en entrenamiento para cada k evaluado."""
     fig, ax = plt.subplots(figsize=(5.5, 3.5))
     ax.plot(ks, valores, marker="o", color=COLORES[0])
     ax.set_xlabel("Número de grupos (k)")
