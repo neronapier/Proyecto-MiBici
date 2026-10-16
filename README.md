@@ -88,8 +88,8 @@ ccds   # respuestas: module_name=mibici, python_version_number=3.12, environment
 Requiere Python 3.12, [uv](https://docs.astral.sh/uv/) y Git. Desde un clon limpio:
 
 ```bash
-git clone https://github.com/neronapier/TC5061-Proyecto-EquipoNN.git
-cd TC5061-Proyecto-EquipoNN
+git clone https://github.com/neronapier/Proyecto-MiBici.git
+cd Proyecto-MiBici
 make create_environment          # uv venv --python 3.12
 source .venv/bin/activate
 make requirements                # uv pip install -r requirements.txt
