@@ -1,5 +1,7 @@
 # TC5061 Proyecto MiBici, Equipo NN
 
+[![CI](https://github.com/neronapier/Proyecto-MiBici/actions/workflows/ci.yml/badge.svg)](https://github.com/neronapier/Proyecto-MiBici/actions/workflows/ci.yml)
+[![Pipeline MiBici](https://github.com/neronapier/Proyecto-MiBici/actions/workflows/pipeline.yml/badge.svg)](https://github.com/neronapier/Proyecto-MiBici/actions/workflows/pipeline.yml)
 <a target="_blank" href="https://cookiecutter-data-science.drivendata.org/">
     <img src="https://img.shields.io/badge/CCDS-Project%20template-328F97?logo=cookiecutter" />
 </a>
@@ -148,6 +150,22 @@ Para usar un servidor remoto basta con definir `MLFLOW_TRACKING_URI` (por ejempl
 
 En P2 el umbral de decisión se elige en validación (máximo F1) y se aplica sin cambios en prueba.
 
+## Automatización con GitHub Actions
+
+| Workflow | Cuándo corre | Qué hace |
+|----------|--------------|----------|
+| [`ci.yml`](.github/workflows/ci.yml) | Cada Pull Request y cada push a `main` | `make lint`, `make test`, revisa que no haya datos, modelos, MLflow ni `.env` en Git y, en los Pull Request, que la rama y el título sigan las convenciones |
+| [`pipeline.yml`](.github/workflows/pipeline.yml) | Manual (*Run workflow*), push a `main` que toque código, datos o dependencias, y cada lunes | Ingesta (`make data`), verificación de hashes (`make verify`), comprobación de que `data/manifest.json` no cambió y, salvo la corrida semanal, el experimento base (`make train`) |
+
+- Los CSV crudos se guardan en la caché de Actions con la versión del manifiesto como llave; los datos nunca
+  entran a Git.
+- El experimento corre contra un servidor de MLflow dentro del runner. La base (`mlflow.db`), los artefactos
+  (`mlartifacts/`) y las figuras se publican como artefacto del workflow (30 días) y el resumen de métricas
+  aparece en la página de la corrida.
+- Para revisar una corrida en local: descargar el artefacto `mlflow-<version>-<commit>`, descomprimirlo en la
+  raíz del repositorio y ejecutar `make mlflow-ui`.
+- La corrida semanal funciona como monitoreo de la fuente: falla si MiBici modifica un archivo ya publicado.
+
 ## Buenas prácticas aplicadas
 
 | Práctica | Cómo se aplica |
@@ -180,7 +198,8 @@ Convención de commits: [Conventional Commits](https://www.conventionalcommits.o
 `<tipo>(<alcance>): <descripción>`. Ejemplos: `feat(dataset): ingesta reproducible con manifiesto de version`,
 `fix(dataset): municipio de estaciones retiradas`.
 
-Antes de abrir un Pull Request: `make lint` y `make test`.
+Antes de abrir un Pull Request: `make lint` y `make test`. El workflow `CI` repite ambos y valida la rama y el
+título; la protección de `main` exige que pase y que otro integrante apruebe.
 
 ## Integrantes
 
