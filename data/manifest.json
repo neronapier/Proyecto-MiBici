@@ -1,6 +1,6 @@
 {
   "ingesta_version": "1",
-  "generado_utc": "2026-10-16T20:08:31+00:00",
+  "generado_utc": "2026-10-16T20:10:06+00:00",
   "fuente": "https://www.mibici.net/es/datos-abiertos/",
   "rango": {
     "inicio": "2024-10",
@@ -477,7 +477,7 @@
     "encoding": "utf-8",
     "filas": 484,
     "parquet": "data/processed/estaciones.parquet",
-    "parquet_sha256": "2d3fcf70b6c24dac04667495e56bbf92eddf918d80729d140d4f9de7f2b599e3"
+    "parquet_sha256": "d6e4d493e8321aceee74b71a0cef5e4ad4a420263431dddb822d6c5a71962a28"
   },
-  "version": "v1-562ac5b29f37"
+  "version": "v1-eba995468a4f"
 }
