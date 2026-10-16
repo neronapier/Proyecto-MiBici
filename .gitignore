@@ -212,3 +212,5 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+# Figuras que regenera cada run del experimento (se guardan como artefactos en MLflow)
+/reports/figures/p[123]-*/

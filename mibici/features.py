@@ -20,6 +20,8 @@ from mibici.config import (
 
 HORAS_DIA = 24
 HORAS_SEMANA = 168
+# Código fijo por municipio para usarlo como variable categórica
+MUNICIPIOS = {"GDL": 0, "ZPN": 1, "TLQ": 2}
 
 
 # Agregaciones base
@@ -96,7 +98,7 @@ def variables_estacion(df: pd.DataFrame, estaciones: pd.DataFrame) -> pd.DataFra
     """
     cols = ["estacion_id", "capacidad", "lat", "lon", "municipio"]
     out = df.merge(estaciones[cols], on="estacion_id", how="left")
-    out["municipio"] = out["municipio"].astype("category")
+    out["municipio_cod"] = out["municipio"].map(MUNICIPIOS).fillna(len(MUNICIPIOS)).astype("int8")
     out["capacidad"] = out["capacidad"].astype("float32")
     return out
 
