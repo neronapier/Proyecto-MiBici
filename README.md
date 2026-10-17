@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/neronapier/Proyecto-MiBici/actions/workflows/ci.yml/badge.svg)](https://github.com/neronapier/Proyecto-MiBici/actions/workflows/ci.yml)
 [![Pipeline MiBici](https://github.com/neronapier/Proyecto-MiBici/actions/workflows/pipeline.yml/badge.svg)](https://github.com/neronapier/Proyecto-MiBici/actions/workflows/pipeline.yml)
+[![Pipeline VPS](https://github.com/neronapier/Proyecto-MiBici/actions/workflows/vps.yml/badge.svg)](https://github.com/neronapier/Proyecto-MiBici/actions/workflows/vps.yml)
 <a target="_blank" href="https://cookiecutter-data-science.drivendata.org/">
     <img src="https://img.shields.io/badge/CCDS-Project%20template-328F97?logo=cookiecutter" />
 </a>
@@ -54,6 +55,7 @@ El ML Canvas está en [`references/ml_canvas.pdf`](references/ml_canvas.pdf) y l
 ├── README.md
 ├── pyproject.toml         <- Metadatos del paquete y configuración de ruff y pytest
 ├── requirements.txt       <- Dependencias con versión fija
+├── deploy/vps             <- Pipeline en el VPS (pipeline.sh) y archivos de la cuenta mlflow-ci del servidor
 ├── data
 │   ├── manifest.json      <- Versión de los datos: filas y SHA-256 por archivo (único archivo versionado)
 │   ├── raw                <- CSV originales descargados (no se versionan)
@@ -156,6 +158,7 @@ En P2 el umbral de decisión se elige en validación (máximo F1) y se aplica si
 |----------|--------------|----------|
 | [`ci.yml`](.github/workflows/ci.yml) | Cada Pull Request y cada push a `main` | `make lint`, `make test`, revisa que no haya datos, modelos, MLflow ni `.env` en Git y, en los Pull Request, que la rama y el título sigan las convenciones |
 | [`pipeline.yml`](.github/workflows/pipeline.yml) | Manual (*Run workflow*), push a `main` que toque código, datos o dependencias, y cada lunes | Ingesta (`make data`), verificación de hashes (`make verify`), comprobación de que `data/manifest.json` no cambió y, salvo la corrida semanal, el experimento base (`make train`) |
+| [`vps.yml`](.github/workflows/vps.yml) | Manual y push a `main` que toque código, datos, dependencias o `deploy/vps/` | El mismo pipeline dentro del entorno MLOps del VPS; los runs quedan en el servidor de MLflow del curso |
 
 - Los CSV crudos se guardan en la caché de Actions con la versión del manifiesto como llave; los datos nunca
   entran a Git.
@@ -166,13 +169,21 @@ En P2 el umbral de decisión se elige en validación (máximo F1) y se aplica si
   raíz del repositorio y ejecutar `make mlflow-ui`.
 - La corrida semanal funciona como monitoreo de la fuente: falla si MiBici modifica un archivo ya publicado.
 
+### Despliegue en el VPS
+
+`vps.yml` ordena por SSH, con una cuenta restringida (`mlflow-ci`), que el servidor del curso ejecute
+[`deploy/vps/pipeline.sh`](deploy/vps/pipeline.sh) para el commit de `main`: lint, pruebas, ingesta, verificación
+y experimento base contra su servidor de MLflow (artefactos en MinIO). Los runs llevan la etiqueta
+`entorno=vps-tc5061` y se consultan en modo solo lectura en https://161.132.54.170. Detalle y configuración en
+[`deploy/vps/README.md`](deploy/vps/README.md).
+
 ## Buenas prácticas aplicadas
 
 | Práctica | Cómo se aplica |
 |----------|----------------|
 | Un experimento y runs con nombre descriptivo | Experimento `mibici-equiponn`; cada run tiene nombre `p<n>-<modelo>` |
 | Registrar lo necesario para reproducir | Parámetros `mes_inicio`, `mes_fin`, `train_fin`, `val_fin`, `data_version`, `seed`, modelo e hiperparámetros, variables usadas |
-| Ligar el run con el código y la pregunta | Etiquetas `equipo`, `pregunta`, `tipo_modelo`, `git_commit`, `git_branch`, `git_dirty` |
+| Ligar el run con el código y la pregunta | Etiquetas `equipo`, `pregunta`, `tipo_modelo`, `git_commit`, `git_branch`, `git_dirty` y `entorno` (local, github-actions o vps-tc5061) |
 | Métricas con el conjunto en el nombre | `val_mae`, `test_mae`, `test_pr_auc`, `train_silhouette`, etc. |
 | Sin credenciales ni datos personales | La ingesta elimina los datos de usuario; los artefactos son gráficas, el manifiesto y una tabla de estaciones (datos públicos) |
 | Notebooks solo para exploración | `notebooks/1.0-jpbc-exploracion-mibici.ipynb`; la lógica vive en `mibici/` |
@@ -191,7 +202,8 @@ Se sigue [GitHub Flow](https://docs.github.com/en/get-started/using-github/githu
 3. Se abre un Pull Request hacia `main`; otro integrante lo revisa y lo aprueba.
 4. Se integra con merge commit y se borra la rama.
 
-Convención de ramas: `<tipo>/<descripcion-corta>`, con tipo `feat`, `fix`, `docs`, `chore`, `refactor` o `test`.
+Convención de ramas: `<tipo>/<descripcion-corta>`, con tipo `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `ci`
+o `perf`.
 Ejemplos: `feat/ingesta-datos`, `fix/estaciones-retiradas`, `docs/readme`.
 
 Convención de commits: [Conventional Commits](https://www.conventionalcommits.org/es/v1.0.0/),

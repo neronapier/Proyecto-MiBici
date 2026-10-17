@@ -1,0 +1,69 @@
+# Pipeline en el VPS: ingesta, verificación y experimento base dentro del entorno TC5061 (contenedor
+# runner junto al servidor de MLflow con artefactos en MinIO). GitHub Actions solo da la orden por SSH
+# con la cuenta mlflow-ci, que únicamente puede ejecutar este pipeline para un commit de main.
+# Resultados públicos (solo lectura): https://161.132.54.170
+name: Pipeline VPS
+
+on:
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: "completo = datos y experimento; datos = solo ingesta y verificación"
+        type: choice
+        options: [completo, datos]
+        default: completo
+  push:
+    branches: [main]
+    paths:
+      - "mibici/**"
+      - "data/manifest.json"
+      - "requirements.txt"
+      - "deploy/vps/**"
+      - ".github/workflows/vps.yml"
+
+permissions:
+  contents: read
+
+# Un solo pipeline a la vez en el servidor (el script del VPS además usa un candado)
+concurrency:
+  group: vps-tc5061
+  cancel-in-progress: false
+
+jobs:
+  vps:
+    name: Pipeline en el entorno TC5061
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    environment:
+      name: vps-tc5061
+      url: https://161.132.54.170
+    steps:
+      - name: Clave SSH de mlflow-ci
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/vps && chmod 600 ~/.ssh/vps
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Ejecutar pipeline en el VPS
+        env:
+          VPS_HOST: ${{ vars.VPS_HOST }}
+          MODO: ${{ inputs.modo || 'completo' }}
+        run: |
+          set -o pipefail
+          ssh -i ~/.ssh/vps -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -o ServerAliveInterval=30 -o ServerAliveCountMax=6 \
+            "mlflow-ci@$VPS_HOST" "pipeline $GITHUB_SHA $MODO" 2>&1 | tee salida.log
+
+      - name: Resumen
+        if: always()
+        run: |
+          if grep -q '^=== RESUMEN ===$' salida.log 2>/dev/null; then
+            sed -n '/^=== RESUMEN ===$/,$p' salida.log | tail -n +2 >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Borrar la clave
+        if: always()
+        run: rm -f ~/.ssh/vps

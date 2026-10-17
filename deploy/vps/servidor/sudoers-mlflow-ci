@@ -1,0 +1,1 @@
+mlflow-ci ALL=(root) NOPASSWD: /usr/local/sbin/mlflow-ci-pipeline
