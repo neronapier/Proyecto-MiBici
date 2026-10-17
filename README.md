@@ -217,12 +217,10 @@ título; la protección de `main` exige que pase y que otro integrante apruebe.
 
 ## Integrantes
 
-| Integrante | Rol |
-|------------|-----|
-| Jordan Piero Borda Colque | Ingesta, versionado de datos y despliegue en el VPS |
-| Julián Hazael Martínez Hernández | Feature engineering |
-| Oscar Eduardo Morales Portuondo | Modelado y registro en MLflow |
-| Eduardo Sebastián Vela Alanís | Arquitectura, documentación y revisión |
+- Jordan Piero Borda Colque
+- Julián Hazael Martínez Hernández
+- Oscar Eduardo Morales Portuondo
+- Eduardo Sebastián Vela Alanís
 
 ## Referencias
 
