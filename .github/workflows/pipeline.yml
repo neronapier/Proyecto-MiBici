@@ -131,6 +131,8 @@ jobs:
           echo "MLFLOW_TRACKING_URI=http://127.0.0.1:5000" >> "$GITHUB_ENV"
 
       - name: Entrenar y registrar P1, P2 y P3
+        env:
+          MIBICI_ENTORNO: github-actions
         run: make train
 
       - name: Resumen de métricas

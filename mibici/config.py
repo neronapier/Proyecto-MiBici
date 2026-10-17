@@ -40,6 +40,8 @@ FIGURES_DIR = REPORTS_DIR / "figures"
 # MLflow: por defecto, base SQLite y artefactos locales (ambos fuera de Git)
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", f"sqlite:///{PROJ_ROOT / 'mlflow.db'}")
 MLARTIFACTS_DIR = PROJ_ROOT / "mlartifacts"
+# Dónde se ejecutó el run (local, github-actions o vps-tc5061); se registra como etiqueta
+ENTORNO = os.getenv("MIBICI_ENTORNO", "local")
 
 # Fuente de datos
 PORTAL_URL = "https://www.mibici.net/es/datos-abiertos/"

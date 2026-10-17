@@ -40,6 +40,7 @@ import typer
 from mibici import features as F
 from mibici import plots
 from mibici.config import (
+    ENTORNO,
     EQUIPO,
     EXPERIMENT_NAME,
     FIGURES_DIR,
@@ -105,7 +106,12 @@ def preparar_mlflow() -> None:
         mlflow.create_experiment(
             EXPERIMENT_NAME,
             artifact_location=MLARTIFACTS_DIR.as_uri() if local else None,
-            tags={"equipo": EQUIPO, "proyecto": "MiBici TC5061"},
+            # experimentKind: la UI de MLflow 3 lo abre en modo de entrenamiento, no GenAI
+            tags={
+                "equipo": EQUIPO,
+                "proyecto": "MiBici TC5061",
+                "mlflow.experimentKind": "custom_model_development",
+            },
         )
     mlflow.set_experiment(EXPERIMENT_NAME)
 
@@ -124,11 +130,12 @@ def params_comunes() -> dict:
 
 
 def tags_comunes(pregunta: str, tipo: str, descripcion: str) -> dict:
-    """Etiquetas de equipo, pregunta, tipo de modelo y commit de Git."""
+    """Etiquetas de equipo, pregunta, tipo de modelo, entorno de ejecución y commit de Git."""
     return {
         "equipo": EQUIPO,
         "pregunta": pregunta,
         "tipo_modelo": tipo,
+        "entorno": ENTORNO,
         **git_info(),
         "mlflow.note.content": descripcion,
     }
