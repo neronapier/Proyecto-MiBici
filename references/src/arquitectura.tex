@@ -26,10 +26,10 @@
 \node[box=c2, below=1.9cm of proc] (feat) {\textbf{Feature engineering}\\[1pt]\footnotesize \texttt{features.py}\\ pandas, holidays};
 \node[box=c2, left=1.1cm of feat] (train) {\textbf{Entrenamiento y evaluación}\\[1pt]\footnotesize \texttt{modeling/train.py}\\ scikit-learn};
 \node[box=c3, left=1.1cm of train] (mlflow) {\textbf{MLflow Tracking}\\[1pt]\footnotesize parámetros, métricas, etiquetas, artefactos y modelos};
-\node[box=c3, left=1.1cm of mlflow] (store) {\textbf{Backend MLflow}\\[1pt]\footnotesize \texttt{mlflow.db} (SQLite)\\ \texttt{mlartifacts/}};
+\node[box=c3, left=1.1cm of mlflow] (store) {\textbf{Servidor MLflow (VPS)}\\[1pt]\footnotesize SQLite + MinIO (artefactos)\\ local: \texttt{mlflow.db}};
 % Fila 3: versionado y uso
 \node[box=c4, below=1.9cm of feat] (manif) {\textbf{Versionado de datos}\\[1pt]\footnotesize \texttt{data/manifest.json}\\ filas + SHA-256};
-\node[box=c4, left=1.1cm of manif] (git) {\textbf{Git / GitHub}\\[1pt]\footnotesize GitHub Flow, PR revisados; GitHub Actions: CI y pipeline};
+\node[box=c4, left=1.1cm of manif] (git) {\textbf{Git / GitHub}\\[1pt]\footnotesize GitHub Flow, PR revisados; Actions: CI, pipeline y VPS};
 \node[box=c4, left=1.1cm of git] (env) {\textbf{Entorno reproducible}\\[1pt]\footnotesize ccds, uv, Python 3.12, \texttt{requirements.txt} fijo};
 \node[box=c3, left=1.1cm of env, dashed] (users) {\textbf{Usuarios}\\[1pt]\footnotesize operador (P1), rebalanceo (P2), planeación (P3)};
 
@@ -44,7 +44,7 @@
 \draw[arr] (manif) -- node[above,font=\scriptsize]{commit} (git);
 \draw[arr, dashed] (manif.north west) -- node[pos=0.45,right=2pt,font=\scriptsize,inner sep=1pt]{data\_version} (train.south east);
 \draw[arr, dashed] (git.north west) -- node[pos=0.5,left=2pt,font=\scriptsize,inner sep=1pt]{git\_commit} (mlflow.south east);
-\draw[arr, dashed] (store.south) -- node[pos=0.5,left,font=\scriptsize,inner sep=1pt]{interfaz web} (users.north);
+\draw[arr, dashed] (store.south) -- node[pos=0.3,right,font=\scriptsize,inner sep=2pt]{UI web pública (solo lectura)} (users.north);
 
 \coordinate (t1) at ([yshift=6mm]portal.north);
 \coordinate (t2) at ([yshift=6mm]store.north);
