@@ -1,0 +1,37 @@
+#!/bin/bash
+# Pipeline de MiBici en el entorno TC5061, pedido por GitHub Actions (cuenta mlflow-ci).
+# Uso (por SSH): pipeline <sha de 40 caracteres> [completo|datos]
+# Solo acepta commits que ya estan en origin/main; todo corre en el contenedor runner (uid 1000).
+set -euo pipefail
+REPO_URL=https://github.com/neronapier/Proyecto-MiBici.git
+DIR=Proyecto-MiBici           # dentro de /work (= /opt/tc5061/work)
+CTR=tc5061-mibici-ci
+
+read -r accion sha modo extra <<< "${1:-}" || true
+modo=${modo:-completo}
+if [[ "$accion" != pipeline || ! "$sha" =~ ^[0-9a-f]{40}$ || ! "$modo" =~ ^(completo|datos)$ || -n "${extra:-}" ]]; then
+  echo "uso: pipeline <sha> [completo|datos]" >&2; exit 2
+fi
+
+exec 9>/run/lock/tc5061-mibici-ci.lock
+flock -w 3600 9 || { echo "otro pipeline sigue en curso" >&2; exit 3; }
+logger -t tc5061-mibici-ci "inicio $sha $modo"
+trap 'docker rm -f "$CTR" >/dev/null 2>&1 || true' EXIT HUP INT TERM
+
+cd /opt/tc5061
+set +e
+docker compose --profile run run --rm -T --name "$CTR" -w /work \
+  -e SHA="$sha" -e MODO="$modo" -e REPO_URL="$REPO_URL" -e DIR="$DIR" -e MIBICI_ENTORNO=vps-tc5061 \
+  runner bash -c '
+    set -euo pipefail
+    [ -d "$DIR/.git" ] || git clone --quiet "$REPO_URL" "$DIR"
+    cd "$DIR"
+    git fetch --quiet origin main
+    git merge-base --is-ancestor "$SHA" origin/main || { echo "$SHA no esta en main" >&2; exit 4; }
+    git checkout --quiet -f -B main "$SHA"
+    echo "Commit: $(git log --oneline -1)"
+    exec bash deploy/vps/pipeline.sh "$MODO"
+  '
+rc=$?
+logger -t tc5061-mibici-ci "fin $sha $modo rc=$rc"
+exit $rc
