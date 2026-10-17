@@ -140,6 +140,8 @@ Una sola pregunta o un solo modelo: `python -m mibici.modeling.train p2 --modelo
 
 Por defecto MLflow usa `sqlite:///mlflow.db` y guarda los artefactos en `mlartifacts/` (ambos fuera de Git).
 Para usar un servidor remoto basta con definir `MLFLOW_TRACKING_URI` (por ejemplo en `.env`).
+Los resultados oficiales del equipo están en el servidor de MLflow del VPS, de solo lectura:
+https://161.132.54.170 (experimento `mibici-equiponn`, runs con etiqueta `entorno=vps-tc5061`).
 
 | Pregunta | Run | Modelo | Métricas principales |
 |----------|-----|--------|----------------------|
@@ -215,12 +217,12 @@ título; la protección de `main` exige que pase y que otro integrante apruebe.
 
 ## Integrantes
 
-| Integrante | Matrícula | Rol |
-|------------|-----------|-----|
-| Jordan Piero Borda Colque | A01840539 | Ingesta y versionado de datos |
-| Integrante 2 | A0XXXXXXX | Feature engineering |
-| Integrante 3 | A0XXXXXXX | Modelado y MLflow |
-| Integrante 4 | A0XXXXXXX | Arquitectura, documentación y revisión |
+| Integrante | Rol |
+|------------|-----|
+| Jordan Piero Borda Colque | Ingesta, versionado de datos y despliegue en el VPS |
+| Julián Hazael Martínez Hernández | Feature engineering |
+| Oscar Eduardo Morales Portuondo | Modelado y registro en MLflow |
+| Eduardo Sebastián Vela Alanís | Arquitectura, documentación y revisión |
 
 ## Referencias
 
